@@ -20,9 +20,10 @@ def printVecrep(output_filename, index):
 	# open up output file for writing
 	f = open(output_filename, 'w')
 	for pageID in index: 
-		(sum_d, pageDict) = index[pageID]
+		(sum_d, feature_vector) = index[pageID]
 		pageString = str(pageID)+' '+str(sum_d)
-		for f_i in pageDict:
+		for f_i in feature_vector:
+			occ_i = feature_vector[f_i]
 			pageString += ' '+str(f_i)+':'+str(occ_i)
 		f.write(pageString+'\n')
 	f.close()
@@ -62,7 +63,7 @@ def main(stopwords_filename, pagesCollection_filename, features_filename, output
 			token = token_list[t]
 
 			if token in features_dict:
-				f_i = features_dict[i] # token is a feature, so get feature index of that feature
+				f_i = features_dict[token] # token is a feature, so get feature index of that feature
 				if not f_i in feature_vector:
 					feature_vector[f_i] = 0
 				feature_vector[f_i] += 1

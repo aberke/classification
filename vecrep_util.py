@@ -34,7 +34,7 @@ def create_features_dict(fname):
         features_dict[w] = line      
 
         w = f.readline()
-        w += 1
+        line += 1
     f.close()
     return features_dict
 
