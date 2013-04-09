@@ -9,22 +9,24 @@ import searchio  # import our own optimized I/O module
 # helper to main: after the index is created, must print it to the output_filename file
 # input: filename of vecRep output file (output_filename)
 #		 index to represent on disk (index)
+#		 number of feature labels (F) -- since dictionary doesn't necessarily iterate through indecies in monotonically increasing order like we want
 # index is built in form {pageID: (sum_d, {f_i: occ_i for f_i in pageID-vector})}
 # write out index in format (referenced in handout section 1.1.1:  pageID sum_d f_i:occ_i ........
 # 		--> print one line for each pageID
-def printVecrep(output_filename, index):
+def printVecrep(output_filename, index, F):
 	# ******** Matt will implement: *************
 	#searchio.printVecrep(output_filename, index)
 
 	# ******** Until then, have: *************
 	# open up output file for writing
 	f = open(output_filename, 'w')
-	for pageID in index: 
+	for pageID in range(len(index)): 
 		(sum_d, feature_vector) = index[pageID]
 		pageString = str(pageID)+' '+str(sum_d)
-		for f_i in feature_vector:
-			occ_i = feature_vector[f_i]
-			pageString += ' '+str(f_i)+':'+str(occ_i)
+		for f_i in range(F):
+			if f_i in feature_vector: # must check since each feature_vector is sparse!
+				occ_i = feature_vector[f_i]
+				pageString += ' '+str(f_i)+':'+str(occ_i)
 		f.write(pageString+'\n')
 	f.close()
 
@@ -42,7 +44,6 @@ def main(stopwords_filename, pagesCollection_filename, features_filename, output
 
 	# obtain dictionary mapping pageID's to list of title and text words, ie collection = {pageID: textString}
 	(collection, maxID) = parse(pagesCollection_filename)
-	print('maxID: '+str(maxID)+', collection length: '+str(len(collection))) ###
 
 	# iterate over keys (pageID's) to fill the index
 	for i in range(maxID+1):
@@ -78,7 +79,7 @@ def main(stopwords_filename, pagesCollection_filename, features_filename, output
 		index[pageID] = (sum_d, feature_vector)
 
 	# now the index is built in form {docID: (sum_d, {f_i:occ_i for feature in features})} -- must print to file in form 'pageID sum_d f_i:occ_i ........'
-	printVecrep(output_filename, index)
+	printVecrep(output_filename, index, len(features_dict))
 	return index
 				
 main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
