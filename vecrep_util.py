@@ -1,7 +1,5 @@
 # file of helper methods to vecrep
-
 # based on XML parser used in createIndex
-import re
 
 # input: filename (fname) of the stopWords file
 # output: set of stopwords
