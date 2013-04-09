@@ -8,3 +8,7 @@ FULL_NAME: Alexandra Berke (TEAM-MATE)
 CS_LOGIN: aberke
 EMAIL_ADDRESS: alexandra_berke@brown.edu
 
+################ Notes ##################
+
+
+
