@@ -28,6 +28,29 @@ def recreate_vecrep(vecrep_filename):
 	f.close()
 	return vecrep
 
+## ***** Matt to rewrite? : ******
+
+# ....I think having the training data in dictionary form right off the bat will make it easier to work with
+# creates dictionary mapping pageID to class it was classified in
+#	ie {pageID: class for pageID in training-set}
+# input: training_filename
+# output: dictionary mapping pageID to class for each document in training set file
+def create_training(training_filename):
+	# open file for reading and instantiate empty dictionary
+	f = open(training_filename, 'r')
+	training = {}
+
+	line = f.readline()
+	while line:
+		(pageID, c) = line.split()
+		training[pageID] = c
+		line = f.readline()
+	f.close()
+	return training
+
+
+
+
 
 # input: 6 arguments:
 #				1) classification method to be used (-mnb for MNB and -r for Rocchio)
