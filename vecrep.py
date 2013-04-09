@@ -6,82 +6,78 @@ from vecrep_util import parse, tokenize, create_stopwords_set, create_features_d
 import searchio  # import our own optimized I/O module
 
 			
-# helper to createIndex: after the index is created, must print it to the ii_filename file
-# input: filename of index (ii_filename)
-#		 total number of docs (N)
+# helper to main: after the index is created, must print it to the output_filename file
+# input: filename of vecRep output file (output_filename)
 #		 index to represent on disk (index)
-# index is built in form {'term': [df, [[pageID, wf, [position for position in page]] for each pageID]]}
-# write out index in format:  term*df&pageID_0%wf% pos_0 pos_1&pageID_1%wf% pos_0 pos_1 pos2&pageID_2%wf% pos_0
-# 		--> print one line for each word in index
-def printIndex(ii_filename, N, index):
-	searchio.createIndex(ii_filename, N, index)
+# index is built in form {pageID: (sum_d, {f_i: occ_i for f_i in pageID-vector})}
+# write out index in format (referenced in handout section 1.1.1:  pageID sum_d f_i:occ_i ........
+# 		--> print one line for each pageID
+def printVecrep(output_filename, index):
+	# ******** Matt will implement: *************
+	#searchio.printVecrep(output_filename, index)
+
+	# ******** Until then, have: *************
+	# open up output file for writing
+	f = open(output_filename, 'w')
+	for pageID in index: 
+		(sum_d, pageDict) = index[pageID]
+		pageString = str(pageID)+' '+str(sum_d)
+		for f_i in pageDict:
+			pageString += ' '+str(f_i)+':'+str(occ_i)
+		f.write(pageString+'\n')
+	f.close()
 
 # input: <stopWords filename>, <pagesCollection filename>, <features filename>, <vecRep output filename to be built>
-# output: write to the files
+# output: file vecRep with an entry line for each document in pagesCollection, where each line in form pageID sum_d f_i:occ_i ........
 def main(stopwords_filename, pagesCollection_filename, features_filename, output_filename):
-	# open up output file for writing
-	output_file = open(output_filename, 'w')
+
 
 	# obtain the stopwords in a set for quick checking
 	stopWords_set = create_stopwords_set(stopwords_filename)
-	# obtain features in a dictionary {feature: featureIndex for feature in features_filename} to allow both quick checking and mapping feature to its index
+	# obtain features in a dictionary {feature: f_i for feature in features_filename} to allow both quick checking and mapping feature to its index
 	features_dict = create_features_dict(features_filename)
-	# initialize empty index with structure {docID: (occurances, {})}
+	# initialize empty index with structure {docID: (sum_d, {f_i:occ_i for feature in features})}
 	index = {}
 
-	# obtain dictionary mapping pageID's to list of title and text words, ie collection = {pageID: [list of tokens]}
+	# obtain dictionary mapping pageID's to list of title and text words, ie collection = {pageID: textString}
 	(collection, maxID) = parse(pagesCollection_filename)
+	print('maxID: '+str(maxID)+', collection length: '+str(len(collection))) ###
 
 	# iterate over keys (pageID's) to fill the index
 	for i in range(maxID+1):
 		if not i in collection:
-			continue
-		# otherwise increment total number of documents and process page
-		N += 1 # increment total documents
-
-		curr_page_index = {}  # build up temporary dictionary mapping {"term_t": [tf_t, [position for position in page]] for term_t in page}
+			print(str(i)+' not in collection!!')
+			#continue
+			return ####
 
 		pageID = i
-		collection[i]
+		textString = collection[i]
+		feature_vector = {}
 		
 		# tokenize titleString
 		token_list = searchio.tokenize(stopWords_set, textString, False)
 		
-		# add to index:
-		position = 0
+		# map feature to feature_occurance in index
 		for t in range(len(token_list)):
 			token = token_list[t]
 
-			# now put token in curr_page_index dict which has structure {"term_t": [tf_t, [position for position in page]] for term_t in page}
-			if not token in curr_page_index:
-				# create new temp_postings entry
-				curr_page_index[token] = [0,[]] # page_postings entry initialized to [tf=0, positions=[]]
+			if token in features_dict:
+				f_i = features_dict[i] # token is a feature, so get feature index of that feature
+				if not f_i in feature_vector:
+					feature_vector[f_i] = 0
+				feature_vector[f_i] += 1
 
-			curr_page_index[token][0] += 1 # increment tf
-			curr_page_index[token][1].append(position) #append position to postings list
-			# now just adjust position
-			position += 1
+		# now have map from f_i to occ_i, but must sum squares of occ_i's to get sum_d
+		sum_d = 0
+		for f_i in feature_vector:
+			occ_i = feature_vector[f_i]
+			sum_d += f_i**2
 
+		# put entry for pageID in index
+		index[pageID] = (sum_d, feature_vector)
 
-		# now curr_page_index built --> need to calculate wf and insert [pageID, wf, [positions]] into index
-		# first calculate length of document vector:
-		curr_norm = docVecNorm(curr_page_index)
-		# now calculate wf for each term in document and insert [pageID, wf, [positions]] into index
-		for term in curr_page_index:
-			# create new post to insert into index
-			new_post = formPost(pageID, curr_page_index[term], curr_norm)
-
-			# insert new post into index
-			if not term in index:
-				# create new postings entry
-				index[term] = [0, []] # postings initialized to [df=0, postings=[]]
-			# append post to postings
-			index[term][0] += 1 # increment df
-			index[term][1].append(new_post) # append post to postings list
-
-	# now the index is built in form {'term': [df, [[pageID, wf, [position for position in page]] for each pageID]]}
-	titleIndex_file.close() # done writing to titleIndex
-	printIndex(ii_filename, N, index)
+	# now the index is built in form {docID: (sum_d, {f_i:occ_i for feature in features})} -- must print to file in form 'pageID sum_d f_i:occ_i ........'
+	printVecrep(output_filename, index)
 	return index
 				
 main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
