@@ -14,10 +14,6 @@ import searchio  # import our own optimized I/O module
 # write out index in format (referenced in handout section 1.1.1:  pageID sum_d f_i:occ_i ........
 # 		--> print one line for each pageID
 def printVecrep(output_filename, index, F):
-	# ******** Matt will implement: *************
-	#searchio.printVecrep(output_filename, index)
-
-	# ******** Until then, have: *************
 	# open up output file for writing
 	f = open(output_filename, 'w')
 	for pageID in range(len(index)): 
@@ -29,6 +25,7 @@ def printVecrep(output_filename, index, F):
 				pageString += ' '+str(f_i)+':'+str(occ_i)
 		f.write(pageString+'\n')
 	f.close()
+	return
 
 # input: <stopWords filename>, <pagesCollection filename>, <features filename>, <vecRep output filename to be built>
 # output: file vecRep with an entry line for each document in pagesCollection, where each line in form pageID sum_d f_i:occ_i ........
@@ -55,7 +52,7 @@ def main(stopwords_filename, pagesCollection_filename, features_filename, output
 		pageID = i
 		textString = collection[i]
 		feature_vector = {}
-		
+		print('about to try to tokenize pageID texstring '+str(pageID))
 		# tokenize titleString
 		token_list = searchio.tokenize(stopWords_set, textString, False)
 		
@@ -79,7 +76,7 @@ def main(stopwords_filename, pagesCollection_filename, features_filename, output
 		index[pageID] = (sum_d, feature_vector)
 
 	# now the index is built in form {docID: (sum_d, {f_i:occ_i for feature in features})} -- must print to file in form 'pageID sum_d f_i:occ_i ........'
-	printVecrep(output_filename, index, len(features_dict))
+	#printVecrep(output_filename, index, len(features_dict))
 	return index
 				
 main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
