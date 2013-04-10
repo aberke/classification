@@ -1,5 +1,9 @@
 # classify.py main file
 
+import sys
+
+from vecrep_util import create_features_dict
+
 from classify_MNB import main as MNB
 from classify_rocchio import main as rocchio
 
@@ -28,10 +32,8 @@ def recreate_vecrep(vecrep_filename):
 	f.close()
 	return vecrep
 
-## ***** Matt to rewrite? : ******
 
-# ....I think having the training data in dictionary form right off the bat will make it easier to work with
-# creates dictionary mapping pageID to class it was classified in
+# creates dictionary mapping pageID to class it was classified in to make training data easier to work with
 #	ie {pageID: class for pageID in training-set}
 # input: training_filename
 # output: dictionary mapping pageID to class for each document in training set file
@@ -60,10 +62,20 @@ def create_training(training_filename):
 #				5) filename containing list of documents to be classified
 #				6) filename of classification results to be generated
 def main(classification_method, features_filename, vecrep_filename, training_filename, toClassify_filename, results_filename):
-	# recreate vecrep that was created and written to file in vecrep.py
+	# create features dictionary, mainly just want to know its size so that we iterate through features by iterating through range of the size of this dictionary
+	features = create_features_dict(features_filename)
+	# recreate vecrep that was created and written to file in vecrep.py {docID: (sum_d, {f_i:occ_i for feature in features})} 
 	vecrep = recreate_vecrep(vecrep_filename)
 	# turn training data file into dictionary form
 	training = create_training(training_filename)
+	# determine if using bayes or rocchio algorithm
+	if classification_method == '-mnb':
+		return MNB(len(features), vecrep, training, toClassify_filename, results_filename)
+	elif classification_method == '-r':
+		return rocchio(features_filename, vecrep, training, toClassify_filename, results_filename)
+	else:
+		print("Must specify algorithm as MNB (flag '-mnb') or Rocchio (flag '-r')")
+		return
 
 
 
@@ -73,6 +85,7 @@ def main(classification_method, features_filename, vecrep_filename, training_fil
 
 
 
+main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6])
 
 
 
