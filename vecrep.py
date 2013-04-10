@@ -82,4 +82,4 @@ def main(stopwords_filename, pagesCollection_filename, features_filename, output
 	printVecrep(output_filename, index, len(features_dict))
 	return index
 				
-main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
+#main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])

@@ -14,34 +14,55 @@
 # output: condprob dictionary
 def create_condprob(features_filename, C):
 	# open up file for reading and instantiate dictionary
-    f = open(features_filename, 'r')
+	f = open(features_filename, 'r')
 	condprob = {}
 
 	# each line of the file is a feature and its line is its index
 	t = 0
-    line = f.readline()
-    while line:
-    	condprob[t] = {}
-    	for c in range(C):
-    		condprob[t][c] = 1
-    	t += 1
-    	line = f.readline()
-    f.close()
-    return condprob
+	line = f.readline()
+	while line:
+		condprob[t] = {}
+		for c in range(C):
+			condprob[t][c] = 1
+		t += 1
+		line = f.readline()
+	f.close()
+	return condprob
 
 
 
 
+def train(vecrep, training):
+	# get total number of documents in training set
+	N = len(training)
 
+
+
+# TRAINMULTINOMIALNB(C,D)
+# 1 V <-- EXTRACTVOCABULARY(D)
+# 2 N <-- COUNTDOCS(D)
+# 3 for each c in C
+# 4 do Nc <-- COUNTDOCSINCLASS(D, c)
+# 5 prior[c] <-- Nc/N
+# 6 textc <-- CONCATENATETEXTOFALLDOCSINCLASS(D, c)
+# 7 for each t in V
+# 8 do Tct <-- COUNTTOKENSOFTERM(textc, t)
+# 9 for each t in V
+# 10 do condprob[t][c] <-- Tct+1
+# sum(t'(Tct'+1)
+# 11 return V, prior, condprob
 
 # input: 5 arguments:
 #				1) list of features
 #				2) vector representation of the pages in dictionary form
-#				3) filename of training set
+#				3) training set as dictionary mapping pageID to class, ie {pageID: class for pageID in training set}
 #				4) filename containing list of documents to be classified
 #				5) filename of classification results to be generated
-def main(features_filename, vecrep, training_filename, toClassify_filename, results_filename):
-	# get total number of documents
+def main(features_filename, vecrep, training, toClassify_filename, results_filename):
+	# train
+	V, prior, condprob = train(vecrep, training)
+	# classify
+	
 
 
 
@@ -51,28 +72,11 @@ def main(features_filename, vecrep, training_filename, toClassify_filename, resu
 
 
 
-
-
-TRAINMULTINOMIALNB(C,D)
-1 V ← EXTRACTVOCABULARY(D)
-2 N ← COUNTDOCS(D)
-3 for each c ∈ C
-4 do Nc ← COUNTDOCSINCLASS(D, c)
-5 prior[c] ← Nc/N
-6 textc ← CONCATENATETEXTOFALLDOCSINCLASS(D, c)
-7 for each t ∈ V
-8 do Tct ← COUNTTOKENSOFTERM(textc, t)
-9 for each t ∈ V
-10 do condprob[t][c] ← Tct+1
-∑t
-′(Tct′+1)
-11 return V, prior, condprob
-
-APPLYMULTINOMIALNB(C,V, prior, condprob,d)
-1 W ← EXTRACTTOKENSFROMDOC(V,d)
-2 for each c ∈ C
-3 do score[c] ← log prior[c]
-4 for each t ∈ W
-5 do score[c] += logcondprob[t][c]
-6 return arg maxc∈C
-score[c
+# APPLYMULTINOMIALNB(C,V, prior, condprob,d)
+# 1 W <-- EXTRACTTOKENSFROMDOC(V,d)
+# 2 for each c in C
+# 3 do score[c] <-- log prior[c]
+# 4 for each t in W
+# 5 do score[c] += logcondprob[t][c]
+# 6 return arg maxc in C
+# score[c

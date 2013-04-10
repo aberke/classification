@@ -10,18 +10,18 @@ from classify_rocchio import main as rocchio
 #			ie vecrep has structure {pageID: (sum_d, {f_i:occ_i for feature in features}) for each pageID}
 def recreate_vecrep(vecrep_filename):
 	# open file for reading and instantiate vecrep dictionary
-    f = open(vecrep_filename, 'r')
+	f = open(vecrep_filename, 'r')
 	vecrep = {}
 
 	lineString = f.readline()
 	while lineString:
 		lineList =  lineString.split()
-		pageID = lineList[0]
-		sum_d = lineList[1]
+		pageID = int(lineList[0])
+		sum_d = int(lineList[1])
 		feature_vector = {}
 		for i in range(2, len(lineList)):
 			(f_i, occ_i) = lineList[i].split(':')
-			feature_vector[f_i] = occ_i
+			feature_vector[int(f_i)] = int(occ_i)
 		vecrep[pageID] = (sum_d, feature_vector)
 
 		lineString = f.readline()
@@ -62,6 +62,8 @@ def create_training(training_filename):
 def main(classification_method, features_filename, vecrep_filename, training_filename, toClassify_filename, results_filename):
 	# recreate vecrep that was created and written to file in vecrep.py
 	vecrep = recreate_vecrep(vecrep_filename)
+	# turn training data file into dictionary form
+	training = create_training(training_filename)
 
 
 
