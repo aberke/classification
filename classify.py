@@ -43,7 +43,7 @@ def create_training(training_filename):
 	line = f.readline()
 	while line:
 		(pageID, c) = line.split()
-		training[pageID] = c
+		training[int(pageID)] = int(c)
 		line = f.readline()
 	f.close()
 	return training
