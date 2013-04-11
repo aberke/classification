@@ -14,7 +14,7 @@ from classify_util import create_classToDocs, create_classToVec, create_categori
 def create_prior(classToDocs, N):
 	prior = {}
 	for c in classToDocs:
-		prior[c] = (len(classToDocs[c])/N)
+		prior[c] = (float(len(classToDocs[c]))/N)
 	return prior
 
 # helper to create conditional probability, which needs to SUM(T_c_t for each T in V)
@@ -51,7 +51,7 @@ def create_condprob(classToVec, V):
 			else:
 				numerator = classToVec[c][t] + 1 # <-- +1 for Laplace smoothing
 			denominator = classToSumOccurances[c] + V
-			condprob[t][c] = numerator/denominator
+			condprob[t][c] = float(numerator)/denominator
 	return condprob
 
 
@@ -71,18 +71,16 @@ def create_condprob(classToVec, V):
 ###############################
 # input: 3 arguments:
 #				1) # of features V -- ie size of 'vocabulary'
-#				2) vector representation of the pages in dictionary form {docID: (sum_d, {f_i:occ_i for feature in features})} 
+#				2) vector representation of the pages (unnormalized) in dictionary form {docID: {f_i:occ_i for feature in features})} 
 #				3) training set as dictionary mapping pageID to class, ie {pageID: class for pageID in training set}
 # output: tuple (prior, condprob)
 #				1) prior = dictionary mapping category c to P(c) --> {c_i: P(c_i) for c_i in categories}
 #				2) condprob = dictionary mapping (t_i,c_i) to P(t_i|c_i) --> {t_i: {c_i: P(t_i|c_i) for c_i in categories} for t_i in features}
 def train(V, vecrep, training):
-	# have vecrep dict
-	# have training dict
 	# get total number of documents in training set
 	N = len(training)
 	# build classToDocs {c_i: {docID: feature-vector}}
-	classToDocs = create_classToDocs(vecrep, training, False)
+	classToDocs = create_classToDocs(vecrep, training)
 	# build prior {c_i: P(c_i)=N_ci/N} where N_ci = #docs of class c_i in training set, N = total #docs in training set
 	prior = create_prior(classToDocs, N)
 	# build classToVec {c_i: feature-vector = sum of feature-vectors for docs of class c_i) for c_i in categories}
@@ -90,7 +88,15 @@ def train(V, vecrep, training):
 	# build condprob dictionary of conditional probabilities {t_i: {c_i: P(t_i|c_i) for c_i in categories} for t_i in V}
 	condprob = create_condprob(classToVec, V)
 	# also get set of categories so it can be used in apply
-	return prior,condprob)
+	return (prior,condprob)
+
+# test prior real quick
+def test_prior(prior):
+	prior_sum = 0
+	for p in prior:
+		prior_sum += prior[p]
+	print('prior_sum = '+str(prior_sum))
+	return
 
 
 # APPLYMULTINOMIALNB(C,V, prior, condprob,d)
@@ -104,23 +110,26 @@ def train(V, vecrep, training):
 ############################################
 # input: implicit: categories set is keys of prior
 #		 1) # of features V -- ie size of 'vocabulary' --> set if feature indecies is range(V)
-#		 2) vector representation of the pages in dictionary form
+#		 2) vector representation of the pages in dictionary form {docID: (sum_d, {f_i:occ_i for feature in features})} 
 #		 3) prior dictionary mapping classes c to P(c) --> {c_i: P(c_i)=N_ci/N} where N_ci = #docs of class c_i in training set, N = total #docs in training set
 #		 4) condprob dictionary of conditional probabilities {t_i: {c_i: P(t_i|c_i) for c_i in categories} for t_i in V}
 #		 5) docID to find most probable class c of
 # output: best c to map docID to
 def applyMNB(V, vecrep, prior, condprob, docID):
-	d = vecrep[docID]
-	heap = []  # uses min-heap turned into max-heap by storing negative values to store P(c|d)'s and retrieve max
+	(sum_d, d_vector) = vecrep[docID]
+	c_heap = []  # uses min-heap turned into max-heap by storing negative values to store P(c|d)'s and retrieve max
 
 	for c in prior:
 		score = log(prior[c])
-		for t in range(V):
-			score += log(condprob[t][c])
+		for t_i in d_vector:
+			T_i = d_vector[t_i]
+			score += T_i*(log(condprob[t_i][c])) # score will be negative since P(t|c) < 1
 		entry = ((-1)*score, c)
-		heappush(heap.entry)
+		heapq.heappush(c_heap, entry)
 	# pop off c with highest probability
-	maxc = heappop(heap)[1]
+	print('heap: ')
+	print(c_heap)
+	maxc = heapq.heappop(c_heap)[1]
 	return maxc
 
 # input:  filename of docID's to classify and all the necessary components for apply to classify with
@@ -133,6 +142,7 @@ def classifyMNB(V, vecrep, prior, condprob, toClassify_filename):
 	line = f_toClassify.readline()
 	while (line and line != '\n'):
 		docID = int(line.split()[0])
+		print('to Classify: '+str(docID))
 		c = applyMNB(V, vecrep, prior, condprob, docID)
 		classified.append((docID,c))
 		line = f_toClassify.readline()
@@ -142,17 +152,21 @@ def classifyMNB(V, vecrep, prior, condprob, toClassify_filename):
 
 # input: 5 arguments:
 #				1) # of features V -- ie size of 'vocabulary'
-#				2) vector representation of the pages in dictionary form
+#				2) vector representation of the pages (unnormalized) in dictionary form {docID: {f_i:occ_i for feature in features})} 
 #				3) training set as dictionary mapping pageID to class, ie {pageID: class for pageID in training set}
 #				4) filename containing list of documents to be classified
 #				5) filename of classification results to be generated
 def main(V, vecrep, training, toClassify_filename, results_filename):
 	# train
+	print('to train')
 	prior, condprob = train(V, vecrep, training)
+	print('trained')
 	# classify each document in toClassify and store (docID, class) tuples in classified list --> get classified = [(docID, class) for docID in toClassify_filename]
 	classified = classifyMNB(V, vecrep, prior, condprob, toClassify_filename)
+	print('classified')
 	# print results to results_filename with 'docID class' entry on each line
 	print_classified(classified, results_filename)
+	print('done')
 	return
 
 

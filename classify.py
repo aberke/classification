@@ -9,10 +9,11 @@ from classify_rocchio import main as rocchio
 
 
 # helper to main for both MNB and Rocchio: recreates the vecrep dictionary from file that was created in vecrep.py
-# input: filename of vector representation of the pages -- written out in format pageID sum_d f_i:occ_i ........
-# output: vecrep dictionary that maps pageID to tuple (sum of sq of occurances, feature-vector), 
-#			ie vecrep has structure {pageID: (sum_d, {f_i:occ_i for feature in features}) for each pageID}
-def recreate_vecrep(vecrep_filename):
+# input:  1) filename of vector representation of the pages -- written out in format pageID sum_d f_i:occ_i ........
+#		  2) boolean true: normalize vectors that docID maps to, if false, leave vectors unnormalized
+# output: vecrep dictionary that maps pageID to (normalized/unnormalized) feature-vector
+#			ie vecrep has structure {pageID: {t_i:occ_i for feature in features(V)} for each pageID}
+def recreate_vecrep(vecrep_filename, normalized_bool):
 	# open file for reading and instantiate vecrep dictionary
 	f = open(vecrep_filename, 'r')
 	vecrep = {}
@@ -23,10 +24,14 @@ def recreate_vecrep(vecrep_filename):
 		pageID = int(lineList[0])
 		sum_d = int(lineList[1])
 		feature_vector = {}
+		# fill in feature-vector
 		for i in range(2, len(lineList)):
 			(f_i, occ_i) = lineList[i].split(':')
-			feature_vector[int(f_i)] = int(occ_i)
-		vecrep[pageID] = (sum_d, feature_vector)
+			if normalized_bool:
+				feature_vector[int(f_i)] = float(occ_i)/sum_d
+			else:
+				feature_vector[int(f_i)] = int(occ_i)
+		vecrep[pageID] = feature_vector
 
 		lineString = f.readline()
 	f.close()
@@ -34,9 +39,8 @@ def recreate_vecrep(vecrep_filename):
 
 
 # creates dictionary mapping pageID to class it was classified in to make training data easier to work with
-#	ie {pageID: class for pageID in training-set}
 # input: training_filename
-# output: dictionary mapping pageID to class for each document in training set file
+# output: dictionary mapping pageID to class for each document in training set file {pageID: class for pageID in training-set}
 def create_training(training_filename):
 	# open file for reading and instantiate empty dictionary
 	f = open(training_filename, 'r')
@@ -51,8 +55,6 @@ def create_training(training_filename):
 	return training
 
 
-
-
 # input: 6 arguments:
 #				1) classification method to be used (-mnb for MNB and -r for Rocchio)
 #				2) list of features
@@ -63,14 +65,16 @@ def create_training(training_filename):
 def main(classification_method, features_filename, vecrep_filename, training_filename, toClassify_filename, results_filename):
 	# create features count (V) since then we can use its range as f_i indecies which is all we care about
 	V = feature_count(features_filename)
-	# recreate vecrep that was created and written to file in vecrep.py {docID: (sum_d, {f_i:occ_i for feature in features})} 
-	vecrep = recreate_vecrep(vecrep_filename)
 	# turn training data file into dictionary form
 	training = create_training(training_filename)
 	# determine if using bayes or rocchio algorithm
 	if classification_method == '-mnb':
+		# create vecrep mapping docID to normalized feature-vector {docID: {f_i:occ_i for feature in features}} 
+		vecrep = recreate_vecrep(vecrep_filename, False)
 		return MNB(V, vecrep, training, toClassify_filename, results_filename)
 	elif classification_method == '-r':
+		# create vecrep mapping docID to normalized feature-vector {docID: {f_i:occ_i for feature in features}} 
+		vecrep_normalized = recreate_vecrep(vecrep_filename, True)
 		return rocchio(V, vecrep, training, toClassify_filename, results_filename)
 	else:
 		print("Must specify algorithm as MNB (flag '-mnb') or Rocchio (flag '-r')")

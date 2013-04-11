@@ -31,29 +31,17 @@ def tuple_to_normalizedVector(docTuple):
 	return normalized_document_vector
 
 # helper to train for both MNB and Rocchio--> builds classToDocs dictionary which turns training set into dictionary mapping class to (docID, document vector tuple)
-# input: 1) dictionary mapping docIDs to their tuple (sum_d, feature vector) {docID: (sum_d, {f_i:occ_i for feature in features})} 
+# input: 1) dictionary mapping docIDs to their feature-vectors {docID: {t_i:occ_i for feature in features(V)}} 
 #		 2) dictionary mapping docID in training set to its class {pageID: class for pageID in training-set}
-#		 3) boolean that's true if process should also normalize each document vector, false if it should not normalize them
-# output: dictionary mapping class to document tuples {c_i: {docID: (sum_d, feature-vector}) for c_i in categories}
-def create_classToDocs(vecrep, training, normalize_bool):
-	# first we'll just map class to dictionary of document tuples (sum_d, document-vector)
-	classToDocTuple = {}
+# output: dictionary mapping class to document tuples {c_i: {docID: feature-vector} for c_i in categories}
+def create_classToDocs(vecrep, training):
+	classToDocs = {}
 	for docID in training:
 		c = training[docID]
-		if not c in classToDocTuple:
-			classToDocTuple[c] = {}
-		doc_tuple = vecrep[docID]
-		classToDocTuple[c][docID] = doc_tuple
-	
-	# now use classToDocTuple to map each class to its document-vectors (normalized or not normalized based on boolean argument)
-	classToDocs = {}
-	for c in classToDocTuple:
-		classToDocs[c] = {}
-		for docID in classToDocTuple[c]:
-			if normalize_bool:
-				classToDocs[c][docID] = tuple_to_normalizedVector(classToDocTuple[c][docID])
-			else:
-				classToDocs[c][docID] = classToDocTuple[c][docID][1]
+		if not c in classToDocs:
+			classToDocs[c] = {}
+		doc_vector = vecrep[docID]
+		classToDocs[c][docID] = doc_vector
 	return classToDocs
 
 # combines all the document vectors corresponding to a given class to one vector representing the feature vector of that class
@@ -75,6 +63,7 @@ def create_classToVec(classToDocs, V):
 
 # helper to create_classToCentroid: 
 def normalize_classToDocs(classToDocs):
+	pass
 
 
 def create_classToCentroid(classToDocs, V):
@@ -94,7 +83,7 @@ def create_categories(dictionary):
 # input: classified list [(docID, class) for each docID in to_classify file]
 def print_classified(classified, results_filename):
 	f_results = open(results_filename, 'w')
-	for i in len(classified):
+	for i in range(len(classified)):
 		(docID, c) = classified[i]
 		f_results.write(str(docID)+' '+str(c)+'\n')
 	f_results.close()
