@@ -52,7 +52,7 @@ def main(stopwords_filename, pagesCollection_filename, features_filename, output
 		pageID = i
 		textString = collection[i]
 		feature_vector = {}
-		print('about to try to tokenize pageID texstring '+str(pageID))
+		
 		# tokenize titleString
 		token_list = searchio.tokenize(stopWords_set, textString, False)
 		

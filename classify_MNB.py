@@ -4,7 +4,7 @@ import heapq # using heap to store max P(c|d) in apply
 from math import log
 
 
-from classify_util import create_classToDocs, create_classToVec
+from classify_util import create_classToDocs, create_classToVec, create_categories, print_classified
 
 
 
@@ -87,12 +87,57 @@ def train(V, vecrep, training):
 	prior = create_prior(classToDocs, N)
 	# build classToVec {c_i: feature-vector = sum of feature-vectors for docs of class c_i) for c_i in categories}
 	classToVec = create_classToVec(classToDocs, V)
-	# build condprob
+	# build condprob dictionary of conditional probabilities {t_i: {c_i: P(t_i|c_i) for c_i in categories} for t_i in V}
 	condprob = create_condprob(classToVec, V)
 	# also get set of categories so it can be used in apply
-	categories = create_categoriesSet(classToVec)
-	return (categories, prior,condprob)
+	return prior,condprob)
 
+
+# APPLYMULTINOMIALNB(C,V, prior, condprob,d)
+# 1 W <-- EXTRACTTOKENSFROMDOC(V,d)
+# 2 for each c in C
+# 3 do score[c] <-- log prior[c]
+# 4 for each t in W
+# 5 do score[c] += logcondprob[t][c]
+# 6 return arg maxc in C
+# score[c]	
+############################################
+# input: implicit: categories set is keys of prior
+#		 1) # of features V -- ie size of 'vocabulary' --> set if feature indecies is range(V)
+#		 2) vector representation of the pages in dictionary form
+#		 3) prior dictionary mapping classes c to P(c) --> {c_i: P(c_i)=N_ci/N} where N_ci = #docs of class c_i in training set, N = total #docs in training set
+#		 4) condprob dictionary of conditional probabilities {t_i: {c_i: P(t_i|c_i) for c_i in categories} for t_i in V}
+#		 5) docID to find most probable class c of
+# output: best c to map docID to
+def applyMNB(V, vecrep, prior, condprob, docID):
+	d = vecrep[docID]
+	heap = []  # uses min-heap turned into max-heap by storing negative values to store P(c|d)'s and retrieve max
+
+	for c in prior:
+		score = log(prior[c])
+		for t in range(V):
+			score += log(condprob[t][c])
+		entry = ((-1)*score, c)
+		heappush(heap.entry)
+	# pop off c with highest probability
+	maxc = heappop(heap)[1]
+	return maxc
+
+# input:  filename of docID's to classify and all the necessary components for apply to classify with
+# output: list classified = [(docID, class) for docID in toClassify_filename]
+def classifyMNB(V, vecrep, prior, condprob, toClassify_filename):
+	# open toClassify and initialize classified list
+	f_toClassify = open(toClassify_filename, 'r')
+	classified = []
+	# for each docID, classify it and add tuple (docID, class) to classified
+	line = f_toClassify.readline()
+	while (line and line != '\n'):
+		docID = int(line.split()[0])
+		c = applyMNB(V, vecrep, prior, condprob, docID)
+		classified.append((docID,c))
+		line = f_toClassify.readline()
+	f_toClassify.close()
+	return classified
 
 
 # input: 5 arguments:
@@ -104,26 +149,12 @@ def train(V, vecrep, training):
 def main(V, vecrep, training, toClassify_filename, results_filename):
 	# train
 	prior, condprob = train(V, vecrep, training)
-	# classify
-	print('TODO')
-	pass
-	
+	# classify each document in toClassify and store (docID, class) tuples in classified list --> get classified = [(docID, class) for docID in toClassify_filename]
+	classified = classifyMNB(V, vecrep, prior, condprob, toClassify_filename)
+	# print results to results_filename with 'docID class' entry on each line
+	print_classified(classified, results_filename)
+	return
 
-def apply(V, vecrep, condprob, docID):
-	d = vecrep[docID]
-	heap = []  # uses min-heap turned into max-heap by storing negative values to store P(c|d)'s and retrieve max
-
-
-
-
-# APPLYMULTINOMIALNB(C,V, prior, condprob,d)
-# 1 W <-- EXTRACTTOKENSFROMDOC(V,d)
-# 2 for each c in C
-# 3 do score[c] <-- log prior[c]
-# 4 for each t in W
-# 5 do score[c] += logcondprob[t][c]
-# 6 return arg maxc in C
-# score[c]
 
 
 
