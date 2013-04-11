@@ -269,7 +269,7 @@ static void step4(void)
                  if (ends("\05" "ement")) break;
                  if (ends("\04" "ment")) break;
                  if (ends("\03" "ent")) break; return;
-       case 'o': if (ends("\03" "ion") && j > 0 && (b[j] == 's' || b[j] == 't')) break;
+       case 'o': if (ends("\03" "ion") && j >= 0 && (b[j] == 's' || b[j] == 't')) break;
                  if (ends("\02" "ou")) break; return;
                  /* takes care of -ous */
        case 's': if (ends("\03" "ism")) break; return;
