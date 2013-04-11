@@ -1,69 +1,58 @@
 # implements MNB (multinomial naive bayes algorithm) for classify
 
+import heapq # using heap to store max P(c|d) in apply
+from math import log
 
 
-# helper to Train: creates count of number of categories -- it's just the number of lines of the categories file
+from classify_util import create_classToDocs, create_classToVec
 
 
-# helper to Train: creates initial condprob dictionary which will have structure {t_i: {c_i:P(t_i|c_i) for c_i in categories} for t_i in features-list} 
-#					where t_i and c_i are indecies of their corresponding feature terms and categories, respectively
-#		--> Initializes condprob to: {t_i:{c_i: 1 for c_i in categories} for t_i in features-list}
-#
-# input: file name of list of features (features_filename)
-#		 number of categories (C)
-# output: condprob dictionary
-def create_condprob(features_filename, C):
-	# open up file for reading and instantiate dictionary
-	f = open(features_filename, 'r')
+
+# input: 1) classToDocs dictionary {c_i: {docID: (sum_d, feature-vector)} for c_i in categories}
+#		 2) total number of documents in training set (N)
+# output: prior dictionary that maps class to its prior probability, ie {c_i: P(c_i)=N_ci/N} where N_ci = #docs of class c_i in training set, N = total #docs in training set
+def create_prior(classToDocs, N):
+	prior = {}
+	for c in classToDocs:
+		prior[c] = (len(classToDocs[c])/N)
+	return prior
+
+# helper to create conditional probability, which needs to SUM(T_c_t for each T in V)
+# input:  feature-vector for given class (should come from classToVec)
+# output: sum of all occurances in that feature-vector
+def create_sumOccurances(feature_vec):
+	sum_occ = 0
+	for f in feature_vec: # for each term in vocabulary
+		sum_occ += feature_vec[f] # SUM += T_c_t  since T = feature_vec[f]
+	return sum_occ
+
+# helper to create_condprob, this dictionary mapping each class c to SUM(T_c_t for each t in vocabulary (V or feature set)) which are parts of denominators of P(t|c)'s
+# input:  classToVec dictionary which maps classes to their feature vectors
+# output: dictionary mapping each class c to SUM(T_c_t for each t in vocabulary (V or feature set))
+def create_classToSumOccurances(classToVec):
+	classToSumOccurances = {}
+	for c in classToVec:
+		feature_vec = classToVec[c]
+		classToSumOccurances[c] = create_sumOccurances(feature_vec)
+	return classToSumOccurances
+
+# input:  1) classToVec dictionary mapping class to its feature-vector {c_i: feature-vector = sum of feature-vectors for docs of class c_i) for c_i in categories}
+# 		  2) number of features (V) so that set of features indecies can be range(V)
+# output: dictionary of conditional probabilities {t_i: {c_i: P(t_i|c_i) for c_i in categories} for t_i in V}
+def create_condprob(classToVec, V):
 	condprob = {}
-
-	# each line of the file is a feature and its line is its index
-	t = 0
-	line = f.readline()
-	while line:
+	# for demonitors of P(t|c) we need SUM(T_c_t for each t in vocabulary (V or feature set)) but we use these same values again and again, so just make dictionary upfront:
+	classToSumOccurances = create_classToSumOccurances(classToVec)
+	for t in range(V):
 		condprob[t] = {}
-		for c in range(C):
-			condprob[t][c] = 1
-		t += 1
-		line = f.readline()
-	f.close()
+		for c in classToVec:
+			if not t in classToVec[c]:
+				numerator = 1 # <-- +1 for Laplace smoothing
+			else:
+				numerator = classToVec[c][t] + 1 # <-- +1 for Laplace smoothing
+			denominator = classToSumOccurances[c] + V
+			condprob[t][c] = numerator/denominator
 	return condprob
-
-
-# helper to train --> builds classToDocs dictionary 
-# input: 1) dictionary mapping docIDs to their tuple (sum_d, feature vector) {docID: (sum_d, {f_i:occ_i for feature in features})} 
-#		 2) dictionary mapping docID in training set to its class {pageID: class for pageID in training-set}
-# output: dictionary mapping class to document tuples {c_i: {docID: (sum_d, feature-vector}) for c_i in categories}
-def create_classToDocs(vecrep, training):
-	classToDocs = {}
-	for docID in training:
-		c = training[docID]
-		if not c in classToDocs:
-			classToDocs[c] = {}
-		doc_tuple = vecrep[docID]
-		classToDocs[c][docID] = doc_tuple
-	return classToDocs
-
-# input: 3 arguments:
-#				1) # of features V -- ie size of 'vocabulary'
-#				2) vector representation of the pages in dictionary form {docID: (sum_d, {f_i:occ_i for feature in features})} 
-#				3) training set as dictionary mapping pageID to class, ie {pageID: class for pageID in training set}
-# output: tuple (prior, condprob)
-#				1) prior = dictionary mapping category c to P(c) --> {c_i: P(c_i) for c_i in categories}
-#				2) condprob = dictionary mapping (t_i,c_i) to P(t_i|c_i) --> {t_i: {c_i: P(t_i|c_i) for c_i in categories} for t_i in features}
-def train(V, vecrep, training):
-	# have vecrep dict
-	# have training dict
-	# get total number of documents in training set
-	N = len(training)
-	# build classToDocs {c_i: {docID: (sum_d, feature-vector})}
-	classToDocs = create_classToDocs()
-	# build prior {c_i: P(c_i)=N_ci/N} where N_ci = #docs of class c_i in training set, N = total #docs in training set
-	# build classToVec {c_i: (sum_c, feature-vector = sum of feature-vectors for docs of class c_i) for c_i in categories}
-	# initialize condprob
-	# populate condprob {t_i: {c_i: (T_ci_ti + 1)/SUM(T_ci_t' + 1) for c_i in categories} for t_i in features}
-	return (prior,condprob)
-
 
 
 # TRAINMULTINOMIALNB(C,D)
@@ -79,6 +68,32 @@ def train(V, vecrep, training):
 # 10 do condprob[t][c] <-- Tct+1
 # sum(t'(Tct'+1)
 # 11 return V, prior, condprob
+###############################
+# input: 3 arguments:
+#				1) # of features V -- ie size of 'vocabulary'
+#				2) vector representation of the pages in dictionary form {docID: (sum_d, {f_i:occ_i for feature in features})} 
+#				3) training set as dictionary mapping pageID to class, ie {pageID: class for pageID in training set}
+# output: tuple (prior, condprob)
+#				1) prior = dictionary mapping category c to P(c) --> {c_i: P(c_i) for c_i in categories}
+#				2) condprob = dictionary mapping (t_i,c_i) to P(t_i|c_i) --> {t_i: {c_i: P(t_i|c_i) for c_i in categories} for t_i in features}
+def train(V, vecrep, training):
+	# have vecrep dict
+	# have training dict
+	# get total number of documents in training set
+	N = len(training)
+	# build classToDocs {c_i: {docID: feature-vector}}
+	classToDocs = create_classToDocs(vecrep, training, False)
+	# build prior {c_i: P(c_i)=N_ci/N} where N_ci = #docs of class c_i in training set, N = total #docs in training set
+	prior = create_prior(classToDocs, N)
+	# build classToVec {c_i: feature-vector = sum of feature-vectors for docs of class c_i) for c_i in categories}
+	classToVec = create_classToVec(classToDocs, V)
+	# build condprob
+	condprob = create_condprob(classToVec, V)
+	# also get set of categories so it can be used in apply
+	categories = create_categoriesSet(classToVec)
+	return (categories, prior,condprob)
+
+
 
 # input: 5 arguments:
 #				1) # of features V -- ie size of 'vocabulary'
@@ -94,10 +109,9 @@ def main(V, vecrep, training, toClassify_filename, results_filename):
 	pass
 	
 
-
-
-
-
+def apply(V, vecrep, condprob, docID):
+	d = vecrep[docID]
+	heap = []  # uses min-heap turned into max-heap by storing negative values to store P(c|d)'s and retrieve max
 
 
 
@@ -109,4 +123,8 @@ def main(V, vecrep, training, toClassify_filename, results_filename):
 # 4 for each t in W
 # 5 do score[c] += logcondprob[t][c]
 # 6 return arg maxc in C
-# score[c
+# score[c]
+
+
+
+
