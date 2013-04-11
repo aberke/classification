@@ -76,7 +76,7 @@ def main(stopwords_filename, pagesCollection_filename, features_filename, output
 		index[pageID] = (sum_d, feature_vector)
 
 	# now the index is built in form {docID: (sum_d, {f_i:occ_i for feature in features})} -- must print to file in form 'pageID sum_d f_i:occ_i ........'
-	#printVecrep(output_filename, index, len(features_dict))
+	printVecrep(output_filename, index, len(features_dict))
 	return index
 				
 main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
