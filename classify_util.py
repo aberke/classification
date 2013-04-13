@@ -33,7 +33,7 @@ def tuple_to_normalizedVector(docTuple):
 # helper to train for both MNB and Rocchio--> builds classToDocs dictionary which turns training set into dictionary mapping class to (docID, document vector tuple)
 # input: 1) dictionary mapping docIDs to their feature-vectors {docID: {t_i:occ_i for feature in features(V)}} 
 #		 2) dictionary mapping docID in training set to its class {pageID: class for pageID in training-set}
-# output: dictionary mapping class to document tuples {c_i: {docID: feature-vector} for c_i in categories}
+# output: dictionary mapping class to documents in that class {c_i: {docID: feature-vector} for c_i in categories}
 def create_classToDocs(vecrep, training):
 	classToDocs = {}
 	for docID in training:

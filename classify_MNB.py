@@ -110,27 +110,24 @@ def test_prior(prior):
 ############################################
 # input: implicit: categories set is keys of prior
 #		 1) # of features V -- ie size of 'vocabulary' --> set if feature indecies is range(V)
-#		 2) vector representation of the pages in dictionary form {docID: (sum_d, {f_i:occ_i for feature in features})} 
+#		 2) vector representation of the pages in dictionary form {docID: {f_i:occ_i for feature in features}} 
 #		 3) prior dictionary mapping classes c to P(c) --> {c_i: P(c_i)=N_ci/N} where N_ci = #docs of class c_i in training set, N = total #docs in training set
 #		 4) condprob dictionary of conditional probabilities {t_i: {c_i: P(t_i|c_i) for c_i in categories} for t_i in V}
 #		 5) docID to find most probable class c of
 # output: best c to map docID to
 def applyMNB(V, vecrep, prior, condprob, docID):
-	(sum_d, d_vector) = vecrep[docID]
-	c_heap = []  # uses min-heap turned into max-heap by storing negative values to store P(c|d)'s and retrieve max
-
+	d_vector = vecrep[docID]
+	max_tup = (float("-inf"), None) # store max (c_score, c)
+	
 	for c in prior:
 		score = log(prior[c])
 		for t_i in d_vector:
 			T_i = d_vector[t_i]
 			score += T_i*(log(condprob[t_i][c])) # score will be negative since P(t|c) < 1
-		entry = ((-1)*score, c)
-		heapq.heappush(c_heap, entry)
-	# pop off c with highest probability
-	print('heap: ')
-	print(c_heap)
-	maxc = heapq.heappop(c_heap)[1]
-	return maxc
+		if score > max_tup[0]:
+			max_tup = (score, c)
+	# return c with highest probability
+	return max_tup[1]
 
 # input:  filename of docID's to classify and all the necessary components for apply to classify with
 # output: list classified = [(docID, class) for docID in toClassify_filename]
@@ -142,7 +139,6 @@ def classifyMNB(V, vecrep, prior, condprob, toClassify_filename):
 	line = f_toClassify.readline()
 	while (line and line != '\n'):
 		docID = int(line.split()[0])
-		print('to Classify: '+str(docID))
 		c = applyMNB(V, vecrep, prior, condprob, docID)
 		classified.append((docID,c))
 		line = f_toClassify.readline()
@@ -158,15 +154,11 @@ def classifyMNB(V, vecrep, prior, condprob, toClassify_filename):
 #				5) filename of classification results to be generated
 def main(V, vecrep, training, toClassify_filename, results_filename):
 	# train
-	print('to train')
 	prior, condprob = train(V, vecrep, training)
-	print('trained')
 	# classify each document in toClassify and store (docID, class) tuples in classified list --> get classified = [(docID, class) for docID in toClassify_filename]
 	classified = classifyMNB(V, vecrep, prior, condprob, toClassify_filename)
-	print('classified')
 	# print results to results_filename with 'docID class' entry on each line
 	print_classified(classified, results_filename)
-	print('done')
 	return
 
 

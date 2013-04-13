@@ -5,7 +5,7 @@ import sys
 from classify_util import feature_count
 
 from classify_MNB import main as MNB
-from classify_rocchio import main as rocchio
+#from classify_rocchio import main as rocchio
 
 
 # helper to main for both MNB and Rocchio: recreates the vecrep dictionary from file that was created in vecrep.py
@@ -75,7 +75,7 @@ def main(classification_method, features_filename, vecrep_filename, training_fil
 	elif classification_method == '-r':
 		# create vecrep mapping docID to normalized feature-vector {docID: {f_i:occ_i for feature in features}} 
 		vecrep_normalized = recreate_vecrep(vecrep_filename, True)
-		return rocchio(V, vecrep, training, toClassify_filename, results_filename)
+		return rocchio(V, vecrep_normalized, training, toClassify_filename, results_filename)
 	else:
 		print("Must specify algorithm as MNB (flag '-mnb') or Rocchio (flag '-r')")
 		return
