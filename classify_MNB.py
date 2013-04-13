@@ -4,7 +4,7 @@ import heapq # using heap to store max P(c|d) in apply
 from math import log
 
 
-from classify_util import create_classToDocs, create_classToVec, create_categories, print_classified
+from classify_util import create_classToDocs, create_classToVec, print_classified
 
 
 

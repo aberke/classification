@@ -61,23 +61,9 @@ def create_classToVec(classToDocs, V):
 		classToVec[c] = feature_vec
 	return classToVec
 
-# helper to create_classToCentroid: 
-def normalize_classToDocs(classToDocs):
-	pass
-
-
 def create_classToCentroid(classToDocs, V):
 	# will utilize create_classToVec's, but first needs to normalize each document vector since u_i = (1/D_i)SUM(v(d) for d in D_i) and v(d) is a normalized vector
 	normalized_classToDocs = normalize_classToDocs(classToDocs)
-
-# extracts set of categories from dictionary that has categories as keys
-# input:  dictionary with training categories as keys
-# output: set of categories
-def create_categories(dictionary):
-	categories = set()
-	for c in dictionary:
-		categories.add(c)
-	return categories
 
 # prints each item of classified to results file in form 'docID class' on each line
 # input: classified list [(docID, class) for each docID in to_classify file]
@@ -88,4 +74,14 @@ def print_classified(classified, results_filename):
 		f_results.write(str(docID)+' '+str(c)+'\n')
 	f_results.close()
 	return
+
+# NEVER ACTUALLY USED
+# extracts set of categories from dictionary that has categories as keys
+# input:  dictionary with training categories as keys
+# output: set of categories
+def create_categories(dictionary):
+	categories = set()
+	for c in dictionary:
+		categories.add(c)
+	return categories
 

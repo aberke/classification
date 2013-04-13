@@ -1,16 +1,15 @@
 # implements Rocchio algorithm for classify
 
-import heapq # used to return argmin ||u_j - v(d)||
-
+from classify_util import create_classToDocs, print_classified
 
 # APPLY({u_1, u_2,..., u_k}, d):
-# 1 return arg minj ||µj − v(d)||
+# 1 return argminj ||u_j - v(d)||
 ##########################################
 # input:  1) classToCentroid dictionary {c_i: u_i} where u_i of form {t_i:occ_i for t_i in features(V)} and u_i = (1/|D_i|)SUM(v(d) for d in D_i)
 #		  2) vector representation of the pages (normalized) in dictionary form {docID: {f_i:occ_i for feature in features})} 
 #		  3) docID of docment to classify
 # output: classification of document docID
-def applRocchio(classToCentroid, vecrep, docID):
+def applyRocchio(classToCentroid, vecrep, docID):
 	doc_vec = vecrep[docID]
 	min_tup = (float("inf"), None) # keep tuple of min (score_c, c)
 	for c_i in classToCentroid:
@@ -23,7 +22,7 @@ def applRocchio(classToCentroid, vecrep, docID):
 				norm_sq += u_i[t]**2
 		if norm_sq < min_tup[0]:
 			min_tup = (norm_sq, c_i)
-	return min_tup[c_i]
+	return min_tup[1]
 
 # input:  filename of docID's to classify and all the necessary components for apply to classify with
 # output: list classified = [(docID, class) for docID in toClassify_filename]
@@ -45,7 +44,7 @@ def classifyRocchio(classToCentroid, vecrep, toClassify_filename):
 # input:  1) # of features V -- ie size of 'vocabulary'
 #		  2) classToDocs dictionary mapping class to (normalized) documents in that class {c_i: {docID: feature-vector} for c_i in categories}
 # output: dictionary mapping class to centroid {c_i: u_i} where u_i of form {t_i:occ_i for t_i in features(V)} and u_i = (1/|D_i|)SUM(v(d) for d in D_i)
-def classToCentroid(V, classToDocs):
+def create_classToCentroid(V, classToDocs):
 	# initalize empty classToCentroid dictionary 
 	classToCentroid = {}
 	for c_i in classToDocs:
@@ -56,7 +55,7 @@ def classToCentroid(V, classToDocs):
 		u = {}
 		for t in range(V):
 			sum_t = 0
-			for docID in docs:
+			for docID in docs_i:
 				if t in docs_i[docID]:
 					sum_t += docs_i[docID][t]
 			u[t] = float(sum_t)/D_i
@@ -90,8 +89,10 @@ def train(V, vecrep_normalized, training):
 def main(V, vecrep_normalized, training, toClassify_filename, results_filename):
 	# train
 	classToCentroid = train(V, vecrep_normalized, training)
+	print('Rocchio created classToCentroid')
 	# classify each document in toClassify and store (docID, class) tuples in classified list --> get classified = [(docID, class) for docID in toClassify_filename]
-	classified = classifyRocchio(classToCentroid, vecrep, toClassify_filename)
+	classified = classifyRocchio(classToCentroid, vecrep_normalized, toClassify_filename)
+	print('Rocchio create classified')
 	# print results to results_filename with 'docID class' entry on each line
 	print_classified(classified, results_filename)
 	return

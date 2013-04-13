@@ -5,7 +5,7 @@ import sys
 from classify_util import feature_count
 
 from classify_MNB import main as MNB
-#from classify_rocchio import main as rocchio
+from classify_rocchio import main as rocchio
 
 
 # helper to main for both MNB and Rocchio: recreates the vecrep dictionary from file that was created in vecrep.py
@@ -82,14 +82,4 @@ def main(classification_method, features_filename, vecrep_filename, training_fil
 
 
 
-
-
-
-
-
-
 main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6])
-
-
-
-
